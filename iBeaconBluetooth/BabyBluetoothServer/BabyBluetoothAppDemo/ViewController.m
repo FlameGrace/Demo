@@ -17,10 +17,14 @@
 @property (weak, nonatomic) IBOutlet UITextView *writeTextView;
 @property (strong, nonatomic) NSTimer *timer;
 @property (assign, nonatomic) BOOL isBeacon;
+@property (assign, nonatomic) NSInteger index;
+@property (assign, nonatomic) long dataSize;
 
 @end
 
 @implementation ViewController
+
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -34,7 +38,7 @@
     self.peripheralManager.addServices(@[service]);
     self.peripheralManager.startAdvertising();
     
-    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(didRead) name:BTS_Read_Noti object:nil];
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(didRead:) name:BTS_Read_Noti object:nil];
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(didCon) name:BTS_Con_Noti object:nil];
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(didDiscon) name:BTS_DisCon_Noti object:nil];
     
@@ -55,20 +59,28 @@
     }
 }
 
-- (void)didRead
+- (void)didRead:(NSNotification *)noti
 {
-    NSString *d = [NSString stringWithFormat:@"有写入请求%@",[self nowDate]];
+    NSData *data = noti.userInfo[@"st"];
+    NSInteger index = self.index++;
+    long dataSize = self.dataSize+data.length;
+    self.dataSize = dataSize;
+    NSString *d = [NSString stringWithFormat:@"有写入请求%@\n第%@次，总字节数：%@，块数：%@",[self nowDate],@(index),@(dataSize),@(dataSize/200)];
     self.writeTextView.text = d;
 }
 
 - (void)didCon
 {
+    self.index = 0;
+    self.dataSize = 0;
     NSString *d = [NSString stringWithFormat:@"有订阅%@",[self nowDate]];
     self.conTextView.text = d;
 }
 
 - (void)didDiscon
 {
+    self.index = 0;
+    self.dataSize = 0;
     NSString *d = [NSString stringWithFormat:@"无订阅%@",[self nowDate]];
     self.conTextView.text = d;
 }

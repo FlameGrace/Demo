@@ -56,7 +56,12 @@
 }
 
 - (IBAction)write:(id)sender {
-    [[BlueToothClient manager]writeNewValue];
+    
+    NSInteger d = 0;
+    while (d<1000) {
+        d++;
+        [[BlueToothClient manager]writeNewValue];
+    }
 }
 
 

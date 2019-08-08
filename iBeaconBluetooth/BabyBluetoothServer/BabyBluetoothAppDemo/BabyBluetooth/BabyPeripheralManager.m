@@ -186,9 +186,7 @@
     for (CBATTRequest *request in requests) {
         [peripheral respondToRequest:request withResult:CBATTErrorSuccess];
         [peripheral updateValue:request.value forCharacteristic:(CBMutableCharacteristic *)request.characteristic onSubscribedCentrals:@[request.central]];
-        NSString *st = [[NSString alloc]initWithData:request.value encoding:NSUTF8StringEncoding];
-        NSLog(@"写入请求：%@",st);
-        [[NSNotificationCenter defaultCenter]postNotificationName:BTS_Read_Noti object:nil];
+        [[NSNotificationCenter defaultCenter]postNotificationName:BTS_Read_Noti object:nil userInfo:@{@"st":request.value}];
     }
 }
 

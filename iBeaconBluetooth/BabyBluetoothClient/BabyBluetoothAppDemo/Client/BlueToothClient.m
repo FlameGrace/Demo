@@ -21,6 +21,7 @@
 
 static BlueToothClient *shareManager = nil;
 static NSInteger btc_indexs = 0;
+static NSInteger btc_callback = 0;
 
 + (instancetype)manager
 {
@@ -34,12 +35,13 @@ static NSInteger btc_indexs = 0;
 - (instancetype)init {
     if (self = [super init] )
     {
-        NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 //蓝牙power没打开时alert提示框
-                                 [NSNumber numberWithBool:YES],CBCentralManagerOptionShowPowerAlertKey,
-                                 //重设centralManager恢复的IdentifierKey
-                                 @"babyBluetoothRestore",CBCentralManagerOptionRestoreIdentifierKey,
-                                 nil];
+//        NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+//                                 //蓝牙power没打开时alert提示框
+//                                 [NSNumber numberWithBool:YES],CBCentralManagerOptionShowPowerAlertKey,
+//                                 //重设centralManager恢复的IdentifierKey
+//                                 @"babyBluetoothRestore",CBCentralManagerOptionRestoreIdentifierKey,
+//                                 nil];
+        NSDictionary *options = nil;
         self.centralManager = [[CBCentralManager alloc]initWithDelegate:self queue:nil options:options];
         
         
@@ -64,9 +66,15 @@ static NSInteger btc_indexs = 0;
     if(self.isConnect)
     {
         NSInteger d =  btc_indexs ++;
-        NSString *da = [NSString stringWithFormat:@"%@, date:%@",@(d),[[NSDate date]description]];
-        NSLog(@"开始写入：%@",da);
-        [self.peripheral writeValue:[da dataUsingEncoding:NSUTF8StringEncoding] forCharacteristic:self.characteristic type:CBCharacteristicWriteWithResponse];
+        NSString *da = [NSString stringWithFormat:@"%@",@(d)];
+        NSLog(@"写入：%@",da);
+        
+        NSString *mm = @"{aps_state = 1;can_data = 2;0;0;1;2;1;2;2;0;0;1;0;1;0;0;0;0;0;0;0;0;6798.75;0.0;1;-2;carID = 866873020520180705;device_type = car;operation = autopark;}{aps_state = 1;can_data = 2;0;0;1;2;1;2;2;0;0;1;0;1;0;0;0;0;0;0;0;0;6798.75;0.0;1;-2;carID = 866873020520180705;device_type = car;operation = autopark;}{aps_state = 1;can_data = 2;0;0;1;2;1;2;2;0;0;1;0;1;0;0;0;0;0;0;0;0;6798.75;0.0;1;-2;carID = 866873020520180705;device_type = car;operation = autopark;}{aps_state = 1;can_data = 2;0;0;1;2;1;2;2;0;0;1;0;1;0;0;0;0;0;0;0;0;6798.75;0.0;1;-2;carID = 866873020520180705;device_type = car;operation = autopark;}{aps_state = 1;can_data = 2;0;0;1;2;1;2;2;0;0;1;0;1;0;0;0;0;0;0;0;0;6798.75;0.0;1;-2;carID = 866873020520180705;device_type = car;operation = autopark;}";
+        
+        NSData *data = [mm dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *subData = [data subdataWithRange:NSMakeRange(0, 510)];
+        
+        [self.peripheral writeValue:subData forCharacteristic:self.characteristic type:CBCharacteristicWriteWithResponse];
     }
 }
 
@@ -139,6 +147,7 @@ static NSInteger btc_indexs = 0;
         case CBCentralManagerStatePoweredOn:
             NSLog(@">>>CBCentralManagerStatePoweredOn");
             [[NSNotificationCenter defaultCenter]postNotificationName:@"BabyNotificationAtCentralManagerEnable" object:@{@"central":central}];
+            [self scanPeripherals];
             break;
         default:
             break;
@@ -230,14 +239,17 @@ static NSInteger btc_indexs = 0;
 //读取Characteristics的值
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
     
-    NSLog(@"error didUpdateValueForCharacteristic %@ with error: %@", characteristic.UUID, [error localizedDescription]);
+//    NSLog(@"error didUpdateValueForCharacteristic %@ with error: %@", characteristic.UUID, [error localizedDescription]);
     [[NSNotificationCenter defaultCenter]postNotificationName:BTC_DidRead_Noti object:nil];
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
     
     [self writeDataString:@"写入数据"];
-        NSLog(@">>>uuid:%@,写入数据:%@",characteristic.UUID,characteristic.value);
+    NSString *st = [[NSString alloc]initWithData:characteristic.value encoding:NSUTF8StringEncoding];
+//    NSLog(@"写入回调:%@,错误:%@",st,error);
+    NSInteger d = btc_callback ++;
+    NSLog(@"写入回调:%@,错误:%@",@(d),error);
     [[NSNotificationCenter defaultCenter]postNotificationName:BTC_DidWrite_Noti object:nil];
     
 }
